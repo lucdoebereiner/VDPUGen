@@ -7,7 +7,7 @@ fn gen_sc(name: String, outputs: usize, args: Vec<String>) -> String {
     let arg_str = args.join(",");
     format!(
         r#"{name} : MultiOutUGen {{
-	*ar {{ arg f1, f2;
+	*ar {{ arg {args};
 		^this.multiNewList(['audio', {args}]);
 	}}
 

@@ -10,6 +10,7 @@ pub struct UGenState {
     output: Vec<f64>,
     flow: Vec<NodeIndex>,
     graph: UGenGraph,
+    n_outputs: usize,
 }
 
 #[no_mangle]
@@ -19,6 +20,7 @@ pub extern "C" fn new_state(samplerate: c_double) -> *mut UGenState {
         output: Vec::new(),
         flow: Vec::new(),
         graph: UGenGraph::new(),
+        n_outputs: 1,
     }))
 }
 
@@ -32,67 +34,26 @@ pub extern "C" fn state_free(state: *mut UGenState) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_graph(state: *mut UGenState, buffer: *mut c_float, length: c_uint) {
+pub extern "C" fn set_graph(state: *mut UGenState) {
     unsafe {
-        let bytes_buffer_f: &[f32] = slice::from_raw_parts_mut(buffer, length as usize);
-        let bytes_buffer: Vec<u8> = bytes_buffer_f.iter().map(|f| *f as u8).collect();
-
-        // let buffer_bytes: &[u8] =
-        //     std::slice::from_raw_parts(buffer as *const u8, (length as usize) * 4);
-
-        // let string_bytes: Vec<u8> = buffer_bytes
-        //     .chunks(4)
-        //     .map(|chunk| {
-        //         let rev_chunk: Vec<u8> = chunk.iter().rev().map(|b| *b).collect();
-        //         rev_chunk
-        //     })
-        //     .flatten()
-        //     .collect();
-
-        // let json_string = from_utf8(&string_bytes);
-        let json_string = from_utf8(&bytes_buffer).unwrap();
-
-        //        *graph = UGenGraph::new();
-
-        (*state).output = vec![0.0; 2];
+        (*state).n_outputs = 1;
+        (*state).output = vec![0.0; (*state).n_outputs];
         (*state).flow = vec![];
 
-        (*state).graph =
-            UGenGraph::from_json_string(json_string.to_string(), &mut (*state).flow).unwrap();
+        (*state).graph = UGenGraph::new();
 
-        (*state).graph.offset_sound_ins(1);
-        // (*state).graph.init_after_deserialization();
-        // (*state)
-        //     .graph
-        //     .update_connections_and_flow(&mut (*state).flow);
+        let input1 = soundinput(1);
 
-        //     println!("{:?}", json_string);
-
-        // let input1 = soundinput(1);
-        // let input2 = soundinput(2);
-        // let mut ugen1 = sinosc(10.0);
-        // let mut ugen2 = sinosc(0.0);
-        // //        let mut ugen2 = sinosc(200.0);
-        // ugen1.set_output(0, 1.0);
-        // ugen2.set_output(1, 1.0);
-        // //        ugen2.set_output(1, 1.0);
-        // let idx1 = (*state).graph.add(input1);
-        // let idx2 = (*state).graph.add(input2);
-        // let idx3 = (*state).graph.add(ugen1);
-        // let idx4 = (*state).graph.add(ugen2);
-        // (*state).graph.connect(idx1, idx3, Connection::new(0, 1.0));
-        // (*state).graph.connect(idx2, idx4, Connection::new(0, 1.0));
-        // (*state).output = vec![0.0; 2];
-        // (*state).flow = vec![];
-        // (*state)
-        //     .graph
-        //     .update_connections_and_flow(&mut (*state).flow);
-
-        // println!(
-        //     "outs: {}, ins: {:?}",
-        //     (*state).graph.number_of_outputs(),
-        //     (*state).graph.number_of_inputs()
-        // );
+        let mut ugen1 = sinosc(10.0);
+        ugen1.set_output(0, 1.0);
+        let idx_input = (*state).graph.add(input1);
+        let idx_ugen = (*state).graph.add(ugen1);
+        (*state)
+            .graph
+            .connect(idx_input, idx_ugen, Connection::new(0, 1.0));
+        (*state)
+            .graph
+            .update_connections_and_flow(&mut (*state).flow);
     }
 }
 
@@ -103,7 +64,7 @@ pub extern "C" fn process(
     sc_out: *mut *mut c_float,
     sc_nsamples: c_int,
 ) {
-    let n_out = (*state).graph.number_of_outputs();
+    let n_out = (*state).n_outputs;
     let n_in = (*state).graph.number_of_inputs();
 
     unsafe {

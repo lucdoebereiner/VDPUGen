@@ -14,7 +14,7 @@ SC_SERVER=${SC_SRC_INCLUDE}/server
 CC=g++
 CPPFLAGS=-std=c++11 -Wno-deprecated -Wno-unknown-pragmas -D_REENTRANT -DNDEBUG -DSC_MEMORY_ALIGNMENT=1 -DSC_LINUX -Wno-deprecated -fPIC -O3
 
-UGEN=AudioMesh
+#UGEN=AudioMesh
 SRCS=$(UGEN).cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
