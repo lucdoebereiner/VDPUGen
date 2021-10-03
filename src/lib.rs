@@ -42,18 +42,34 @@ pub extern "C" fn set_graph(state: *mut UGenState) {
 
         (*state).graph = UGenGraph::new();
 
-        let input1 = soundinput(1);
+        let audio_input = soundinput(0);
+        let e = soundinput(1);
+        let a = soundinput(2);
+        let f = soundinput(3);
 
-        let mut ugen1 = sinosc(10.0);
-        ugen1.set_output(0, 1.0);
-        let idx_input = (*state).graph.add(input1);
-        let idx_ugen = (*state).graph.add(ugen1);
+        let mut vdp_ugen = vdp();
+        vdp_ugen.set_output(0, 1.0);
+        let idx_vdp = (*state).graph.add(vdp_ugen);
+        let idx_input = (*state).graph.add(audio_input);
+        let idx_e = (*state).graph.add(e);
+        let idx_a = (*state).graph.add(a);
+        let idx_f = (*state).graph.add(f);
         (*state)
             .graph
-            .connect(idx_input, idx_ugen, Connection::new(0, 1.0));
+            .connect(idx_input, idx_vdp, Connection::new(0, 1.0));
         (*state)
             .graph
-            .update_connections_and_flow(&mut (*state).flow);
+            .connect(idx_e, idx_vdp, Connection::new(1, 1.0));
+        (*state)
+            .graph
+            .connect(idx_f, idx_vdp, Connection::new(2, 1.0));
+        (*state)
+            .graph
+            .connect(idx_a, idx_vdp, Connection::new(3, 1.0));
+
+        (*state)
+            .graph
+            .update_connections_and_flow(&mut (*state).flow, false);
     }
 }
 

@@ -1,20 +1,10 @@
 #!/bin/bash
 
 cargo build --release
-while getopts n:a:o: flag
-do
-    case "${flag}" in
-        n) name=${OPTARG};;
-        a) arguments=${OPTARG};;
-        o) outputs=${OPTARG};;
-    esac
-done
-echo "Ugen Name: $name";
-echo "UGen Arguments: $arguments";
-echo "UGen Outputs: $outputs";
 
 cd genscwrapper
-cargo run -- --name $name --outputs $outputs -a $arguments
+cargo run -- --name VDPUGen --outputs 1 -a "in, e, a, f"
 cd ../sc
-make ugen UGEN=$name
+make ugen UGEN=VDPUGen
+make install UGEN=VDPUGen
 cd ..
